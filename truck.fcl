@@ -1,0 +1,137 @@
+FUNCTION_BLOCK remoteDriver // Block definition
+	
+VAR_INPUT    
+ x : REAL;
+ y : REAL;
+ angle : REAL;
+END_VAR
+
+VAR_OUTPUT    
+ direction : REAL;
+END_VAR
+
+FUZZIFY x
+ TERM far_left := (0.00, 1) (0.16, 0);
+ TERM _left   := (0.00, 1) (0.16, 0);
+ TERM left   := (0.00, 0) (0.16, 1) (0.32, 0);
+ TERM center_left  := (0.16, 0) (0.32, 1) (0.5, 0);
+ TERM center := (0.32, 0) (0.50, 1) (0.68, 0);
+ TERM center_right := (0.5, 0) (0.68, 1) (0.84, 0);
+ TERM right  := (0.68, 0) (0.84, 1) (1.00, 0);
+ TERM _right  := (0.84, 0) (1.00, 1);
+ TERM far_right := (0.84, 0) (1.00, 1);
+END_FUZZIFY
+
+FUZZIFY y
+ TERM too_far := (0.00, 1) (0.30, 1) (0.70, 0);
+ TERM far := (0.00, 1) (0.30, 1) (0.70, 0);
+ TERM near := (0.3, 0) (0.7, 1) (0.8, 1);
+ TERM too_close := (0.7, 0) (0.80, 1) (1.00, 1);
+END_FUZZIFY
+
+FUZZIFY angle
+ TERM a0   := (0.00, 1) (45.0, 0) (315, 0) (360, 1);
+ TERM a45   := (0.00, 0) (45.0, 1) (90.0, 0);
+ TERM a90   := (45.0, 0) (90.0, 1) (135.0, 0);
+ TERM a135   := (90.0, 0) (135.0, 1) (180, 0);
+ TERM a180 := (135.0, 0) (0180, 1) (225, 0);
+ TERM a225  := (0180, 0) (225, 1) (270, 0);
+ TERM a270 := (225, 0) (270, 1) (315, 0);
+ TERM a315  := (270, 0) (315, 1) (360,0);
+END_FUZZIFY
+
+DEFUZZIFY direction
+ TERM left_max_value       := (-1.0, 1) (-0.5, 0);
+ TERM left_medium_value      := (-1.0, 0) (-0.7, 1) (-0.4, 0);
+ TERM left_min_value      := (-0.7, 0) (-0.4, 1) (0.0, 0);
+ TERM straight         		 := (-0.1, 0) (0.00, 1) (0.10, 0);
+ TERM right_min_value       := (0.0, 0) (0.40, 1) (0.70, 0);
+ TERM right_medium_value     	 := (0.40, 0) (0.70, 1) (1.00, 0);
+ TERM right_max_value    	 := (0.70, 0) (1.00, 1);
+
+
+ METHOD : COG;  // Use 'Center Of Gravity' defuzzification method
+ DEFAULT := 0.0;  // Default value is 0 (if no rule activates defuzzifier)
+END_DEFUZZIFY
+
+
+// Inference rules
+
+RULEBLOCK No1
+ AND : MIN; // Use 'min' for 'and'
+ ACT : MIN; // Use 'min' activation method
+ ACCU : MAX; // Use 'max' accumulation method
+
+
+//angle 0 - 
+RULE 1: IF angle IS a0 AND (y IS far OR  y IS near ) AND (x IS _right OR x IS right )THEN direction IS right_min_value;
+RULE 2: IF angle IS a0 AND y IS too_close AND (x IS _right OR x IS right) THEN direction IS left_max_value;
+RULE 3: IF angle IS a0 AND (y IS far OR y IS near OR y IS too_close ) AND x IS center_right THEN direction IS right_max_value;
+RULE 4: IF angle IS a0 AND (y IS far OR y IS near ) AND (x IS _left OR x IS left OR x IS center_left) THEN direction IS right_max_value; 
+RULE 5: IF angle IS a0 AND (y IS far OR y IS near) AND x IS center THEN direction IS right_max_value;
+RULE 6: IF angle IS a0 AND y IS too_close AND x IS center THEN direction IS right_max_value;
+RULE 7: IF angle IS a0 AND y IS too_close AND (x IS _left OR x IS left OR x IS center_left) THEN direction IS left_max_value;
+
+//angle 45 
+RULE 8: IF angle IS a45 AND (y IS far OR y IS near OR y IS too_close) AND x IS _left THEN direction IS right_max_value;
+RULE 9: IF angle IS a45 AND (y IS far OR y IS near) AND x IS left THEN direction IS right_max_value; 
+RULE 10: IF angle IS a45 AND (y IS far OR y IS near OR y IS too_close) AND x IS _right THEN direction IS left_max_value;
+RULE 11: IF angle IS a45 AND (y IS far OR y IS near OR y IS too_close) AND x IS right THEN direction IS left_medium_value;
+RULE 12: IF angle IS a45 AND (y IS far OR y IS near) AND x IS center_right THEN direction IS right_min_value;
+RULE 13: IF angle IS a45 AND y IS too_close AND x IS center_right THEN direction IS right_min_value;
+RULE 14: IF angle IS a45 AND (y IS far OR y IS near) AND x IS center_left THEN direction IS right_max_value;
+RULE 15: IF angle IS a45 AND y IS too_close AND (x IS left OR x IS  center_left) THEN direction IS left_max_value;
+RULE 16: IF angle IS a45 AND (y IS far OR y IS near OR y IS too_close) AND x IS center THEN direction IS right_medium_value;
+
+//angle 90 
+RULE 17: IF angle IS a90 AND (y IS far OR y IS near OR y IS too_close) AND x  IS center THEN  direction IS straight;
+RULE 18: IF angle IS a90 AND (y IS far OR y IS near) and x IS center_right THEN direction IS left_medium_value;
+RULE 19: IF angle IS a90 AND (y IS far OR y IS near) and x IS center_left THEN direction IS right_medium_value;
+RULE 20: IF angle IS a90 AND y IS too_close and x IS center_right THEN direction IS left_max_value;
+RULE 21: IF angle IS a90 AND y IS too_close and x IS center_left THEN direction IS right_max_value;
+RULE 22: IF angle IS a90 AND (y IS far OR y IS near) and x IS right THEN direction IS left_medium_value;
+RULE 23: IF angle IS a90 AND (y IS far OR y IS near) and x IS left THEN direction IS right_medium_value;
+RULE 24: IF angle IS a90 AND y IS too_close and x IS right THEN direction IS left_max_value;
+RULE 25: IF angle IS a90 AND y IS too_close and x IS left THEN direction IS right_max_value;
+RULE 26: IF angle IS a90 AND (y IS far OR y IS near) and x IS _left THEN direction IS right_max_value;
+RULE 27: IF angle IS a90 AND (y IS far OR y IS near) and x IS _right THEN direction IS left_max_value;
+RULE 28: IF angle IS a90 AND y IS too_close and x IS _right THEN direction IS left_max_value;
+RULE 29: IF angle IS a90 AND y IS too_close and x IS _left THEN direction IS right_max_value;
+
+//angle 135 
+RULE 30 : IF angle IS a135 AND y IS too_close AND (x IS _left OR x IS left OR x IS center_left) THEN direction IS right_max_value;
+RULE 31: IF angle IS a135 AND y IS near AND (x IS _left OR x IS left) THEN direction IS left_medium_value;
+RULE 32: IF angle IS a135 AND y IS far AND (x IS _left OR x IS left) THEN direction IS right_medium_value;
+RULE 33: IF angle IS a135 AND (y IS near OR y IS far) AND x is center_left THEN direction IS left_max_value;
+RULE 34: IF angle IS a135 AND (y IS near OR y IS far OR y IS too_close) AND x IS center THEN direction IS left_max_value;
+RULE 35: IF angle IS a135 AND (y IS too_close OR y IS near) AND x IS _right THEN direction IS right_max_value;
+RULE 36: IF angle IS a135 AND y IS far AND (x IS _right OR x IS right OR x IS center_right) THEN direction IS left_max_value;
+RULE 37: IF angle IS a135 AND (y IS too_close OR y IS near) AND x IS right THEN direction IS left_max_value;
+RULE 38: IF angle IS a135 AND (y IS too_close OR y IS near) AND x IS center_right THEN direction IS left_max_value;
+
+
+//angle 180
+RULE 39: IF angle IS a180 AND (y IS far OR y IS near) AND (x IS _left OR x IS left )THEN direction IS left_min_value;
+RULE 40: IF angle IS a180 AND (y IS far OR y IS near) AND x IS center_left THEN direction IS left_max_value;
+RULE 41: IF angle IS a180 AND y IS too_close AND (x IS _left OR x IS left OR  x IS center_left )  THEN direction IS left_max_value;
+RULE 42: IF angle IS a180 AND (y IS far OR y IS near OR y IS too_close) AND ( x IS _right OR x IS center_right OR  x IS center OR  x IS right) THEN direction IS right_max_value;
+
+//angle 225
+RULE 43: IF  angle IS a225 AND (y IS near OR y IS far) AND x IS center THEN  direction IS left_max_value;
+RULE 44: IF  angle IS a225 AND y IS too_close AND x IS center THEN  direction IS right_max_value;
+RULE 45: IF angle IS a225 AND (y IS near OR y IS far OR  y IS too_close) AND (x IS center_right OR x IS right OR x IS _right)  THEN direction IS right_max_value;
+RULE 46: IF angle IS a225 AND (y IS near OR y IS far OR y IS too_close) AND (x IS center_left OR x IS left OR x IS _left) THEN direction IS left_max_value;
+
+//angle 270
+RULE 47: IF angle IS a270 AND (y IS far OR y IS near OR y IS too_close) and (x IS center OR x IS center_right OR x IS right OR x IS _right) THEN direction IS right_max_value;
+RULE 48: IF angle IS a270 AND (y IS far OR y IS near OR y IS too_close) and (x IS center_left OR x IS left OR x IS _left) THEN direction IS left_max_value;
+
+//angle 315
+RULE 49: IF  angle IS a315 AND (y IS near OR y IS far) AND x IS center THEN  direction IS right_max_value;
+RULE 50: IF  angle IS a315 AND y IS too_close AND x IS center THEN  direction IS left_max_value;
+RULE 51: IF angle IS a315 AND (y IS near OR y IS far OR  y IS too_close) AND (x IS center_left OR x IS left OR x IS _left)  THEN direction IS left_max_value;
+RULE 52: IF angle IS a315 AND (y IS near OR y IS far OR y IS too_close) AND (x IS center_right OR x IS right OR x IS _right) THEN direction IS right_max_value;
+
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
