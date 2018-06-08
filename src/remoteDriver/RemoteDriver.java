@@ -10,8 +10,9 @@ import java.util.StringTokenizer;
 
 import net.sourceforge.jFuzzyLogic.FIS;
 import net.sourceforge.jFuzzyLogic.FunctionBlock;
-import net.sourceforge.jFuzzyLogic.rule.*;
 
+
+//ultima pontuacao 9962
 
 public class RemoteDriver {
 	
